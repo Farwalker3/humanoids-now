@@ -5,3 +5,4 @@ export { useMediaQuery, useIsMobile, useIsTablet, useIsDesktop } from './use-med
 export { useMounted } from './use-mounted';
 export { useCopyToClipboard } from './use-copy-to-clipboard';
 export { useTheme } from './use-theme';
+export { useToast, toast } from './use-toast';
