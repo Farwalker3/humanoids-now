@@ -4,41 +4,85 @@ import { kv } from '@vercel/kv';
 import { partnershipSchema } from '@/lib/validations';
 import { z } from 'zod';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Validate required environment variables at startup
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const NOTIFICATION_EMAIL = process.env.NOTIFICATION_EMAIL;
+const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
+
+// Initialize Resend only if API key is available
+let resend: Resend | null = null;
+if (RESEND_API_KEY) {
+  resend = new Resend(RESEND_API_KEY);
+} else {
+  console.error('CRITICAL: RESEND_API_KEY environment variable is not set. Email functionality will be disabled.');
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    // Parse request body
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError);
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
     
     // Validate the request body
-    const validatedData = partnershipSchema.parse(body);
+    let validatedData;
+    try {
+      validatedData = partnershipSchema.parse(body);
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        return NextResponse.json(
+          { 
+            error: 'Invalid data provided', 
+            details: validationError.errors.map(err => ({
+              field: err.path.join('.'),
+              message: err.message
+            }))
+          },
+          { status: 400 }
+        );
+      }
+      throw validationError;
+    }
     
     // Generate unique ID for this inquiry
     const inquiryId = `partnership:${Date.now()}:${validatedData.email}`;
     const timestamp = new Date().toISOString();
     
-    // Store in Vercel KV
-    await kv.set(inquiryId, {
+    const inquiryData = {
       ...validatedData,
       timestamp,
       status: 'new',
-    });
+    };
     
-    // Add to partnership inquiries list
-    await kv.lpush('partnership:inquiries', inquiryId);
-    
-    // Increment partnership counter
-    await kv.incr('partnership:count');
+    // Store in Vercel KV with proper error handling
+    try {
+      await kv.set(inquiryId, inquiryData);
+      await kv.lpush('partnership:inquiries', inquiryId);
+      await kv.incr('partnership:count');
+    } catch (kvError) {
+      console.error('Vercel KV connection error:', kvError);
+      return NextResponse.json(
+        { 
+          error: 'Database connection failed. Please try again later.',
+          details: process.env.NODE_ENV === 'development' ? String(kvError) : undefined
+        },
+        { status: 503 }
+      );
+    }
     
     // Send notification email to admin
-    const notificationEmail = process.env.NOTIFICATION_EMAIL;
-    const fromEmail = process.env.FROM_EMAIL || 'onboarding@resend.dev';
-    
-    if (notificationEmail) {
+    if (resend && NOTIFICATION_EMAIL) {
       try {
         await resend.emails.send({
-          from: fromEmail,
-          to: notificationEmail,
+          from: FROM_EMAIL,
+          to: NOTIFICATION_EMAIL,
           subject: '🤝 New Partnership Inquiry - Prosthetic Companion',
           html: `
             <h2>New Partnership Inquiry</h2>
@@ -59,49 +103,60 @@ export async function POST(request: NextRequest) {
         });
       } catch (emailError) {
         console.error('Failed to send notification email:', emailError);
-        // Continue even if email fails - data is already saved
+        // Continue - data is already saved, email is non-critical
+      }
+    } else {
+      if (!resend) {
+        console.warn('Skipping notification email: RESEND_API_KEY not configured');
+      }
+      if (!NOTIFICATION_EMAIL) {
+        console.warn('Skipping notification email: NOTIFICATION_EMAIL not configured');
       }
     }
     
     // Send confirmation email to inquirer
-    try {
-      await resend.emails.send({
-        from: fromEmail,
-        to: validatedData.email,
-        subject: 'Thank You for Your Partnership Inquiry',
-        html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #333;">Thank You for Your Interest</h1>
-            <p>Hi ${validatedData.name},</p>
-            <p>Thank you for reaching out to us at Prosthetic Companion. We've received your partnership inquiry and are excited to learn more about potential collaboration opportunities.</p>
-            <p>Our team will review your message and get back to you within <strong>48 hours</strong>.</p>
-            
-            <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="margin-top: 0;">Your Inquiry Details:</h3>
-              <p><strong>Organization:</strong> ${validatedData.organization}</p>
-              <p><strong>Your Message:</strong></p>
-              <p style="white-space: pre-wrap;">${validatedData.message}</p>
+    if (resend) {
+      try {
+        await resend.emails.send({
+          from: FROM_EMAIL,
+          to: validatedData.email,
+          subject: 'Thank You for Your Partnership Inquiry',
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+              <h1 style="color: #333;">Thank You for Your Interest</h1>
+              <p>Hi ${validatedData.name},</p>
+              <p>Thank you for reaching out to us at Prosthetic Companion. We've received your partnership inquiry and are excited to learn more about potential collaboration opportunities.</p>
+              <p>Our team will review your message and get back to you within <strong>48 hours</strong>.</p>
+              
+              <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Your Inquiry Details:</h3>
+                <p><strong>Organization:</strong> ${validatedData.organization}</p>
+                <p><strong>Your Message:</strong></p>
+                <p style="white-space: pre-wrap;">${validatedData.message}</p>
+              </div>
+              
+              <p>If you have any additional information to share in the meantime, feel free to reply to this email.</p>
+              
+              <p>You can also connect with us on:</p>
+              <ul>
+                <li><a href="https://www.linkedin.com/in/johncbarr/">LinkedIn</a></li>
+                <li><a href="https://x.com/farwalker3">X / Twitter</a></li>
+              </ul>
+              
+              <p>Best regards,<br/>The Prosthetic Companion Team</p>
+              <hr style="margin-top: 30px; border: none; border-top: 1px solid #eee;" />
+              <p style="color: #999; font-size: 12px;">
+                If you didn't submit this inquiry, please let us know by replying to this email.
+              </p>
             </div>
-            
-            <p>If you have any additional information to share in the meantime, feel free to reply to this email.</p>
-            
-            <p>You can also connect with us on:</p>
-            <ul>
-              <li><a href="https://www.linkedin.com/in/johncbarr/">LinkedIn</a></li>
-              <li><a href="https://x.com/farwalker3">X / Twitter</a></li>
-            </ul>
-            
-            <p>Best regards,<br/>The Prosthetic Companion Team</p>
-            <hr style="margin-top: 30px; border: none; border-top: 1px solid #eee;" />
-            <p style="color: #999; font-size: 12px;">
-              If you didn't submit this inquiry, please let us know by replying to this email.
-            </p>
-          </div>
-        `,
-      });
-    } catch (confirmEmailError) {
-      console.error('Failed to send confirmation email:', confirmEmailError);
-      // Continue even if confirmation email fails
+          `,
+        });
+      } catch (confirmEmailError) {
+        console.error('Failed to send confirmation email:', confirmEmailError);
+        // Continue - inquiry has been recorded successfully
+      }
+    } else {
+      console.warn('Skipping confirmation email: RESEND_API_KEY not configured');
     }
     
     return NextResponse.json({
@@ -112,15 +167,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Partnership API error:', error);
     
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid data provided', details: error.errors },
-        { status: 400 }
-      );
-    }
-    
+    // Return generic error for unexpected issues
     return NextResponse.json(
-      { error: 'Failed to submit inquiry. Please try again.' },
+      { 
+        error: 'An unexpected error occurred. Please try again later.',
+        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+      },
       { status: 500 }
     );
   }
