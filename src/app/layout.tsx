@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Sora, DM_Sans, JetBrains_Mono } from 'next/font/google';
 import "./globals.css";
 import { ThemeProvider } from "@/app/providers/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
 
 const sora = Sora({
   variable: "--font-display",
@@ -22,8 +23,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Industrial Robotics - Coming Soon",
-  description: "A revolutionary prosthetic companion project. Building the future of human-robot collaboration.",
+  title: "Prosthetic Companion - Building the Future of Human-Robot Collaboration",
+  description: "A revolutionary prosthetic companion project. Building intelligent robotics solutions that enhance human capability.",
 };
 
 export default function RootLayout({
@@ -43,6 +44,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
