@@ -3,12 +3,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { useMounted } from '@/hooks';
-import Link from 'next/link';
+import { WaitlistModal } from '@/components/waitlist-modal';
+import { PartnershipModal } from '@/components/partnership-modal';
 
 export default function Home() {
   const mounted = useMounted();
   const [fundsRaised, setFundsRaised] = useState(0);
   const videoRef = useRef<HTMLIFrameElement>(null);
+  
+  // Modal states
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
+  const [partnershipOpen, setPartnershipOpen] = useState(false);
 
   // Animate funds counter on mount
   useEffect(() => {
@@ -264,12 +269,18 @@ export default function Home() {
             className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12"
           >
             {/* Join Waitlist Button */}
-            <button className="bg-accent text-accent-foreground font-semibold py-4 px-8 rounded-lg hover:bg-accent/90 transition text-lg font-display">
+            <button 
+              onClick={() => setWaitlistOpen(true)}
+              className="bg-accent text-accent-foreground font-semibold py-4 px-8 rounded-lg hover:bg-accent/90 transition text-lg font-display"
+            >
               Join Waitlist
             </button>
 
             {/* Partner Inquiry Button */}
-            <button className="bg-background border-2 border-accent text-accent font-semibold py-4 px-8 rounded-lg hover:bg-accent/5 transition text-lg font-display">
+            <button 
+              onClick={() => setPartnershipOpen(true)}
+              className="bg-background border-2 border-accent text-accent font-semibold py-4 px-8 rounded-lg hover:bg-accent/5 transition text-lg font-display"
+            >
               Interested in Partnering?
             </button>
           </motion.div>
@@ -318,6 +329,10 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Modals */}
+      <WaitlistModal open={waitlistOpen} onOpenChange={setWaitlistOpen} />
+      <PartnershipModal open={partnershipOpen} onOpenChange={setPartnershipOpen} />
     </div>
   );
 }
