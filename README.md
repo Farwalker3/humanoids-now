@@ -179,6 +179,17 @@ KV_REST_API_READ_ONLY_TOKEN=xxxxxxxxxxxxx
 - ✅ HTTPS only
 - ✅ CORS protection
 
+## 🛡️ Error Handling
+
+### Robust API Error Handling
+Both waitlist and partnership API routes include comprehensive error handling:
+- ✅ Environment variable validation at startup
+- ✅ Graceful degradation when services are unavailable
+- ✅ Separate error handling for database and email operations
+- ✅ User-friendly error messages with technical details in dev mode
+- ✅ Proper HTTP status codes (400, 503, 500)
+- ✅ Operations continue even if non-critical services fail
+
 ## 📊 Monitoring
 
 ### Resend Dashboard
@@ -218,5 +229,6 @@ Built with:
 ---
 
 **Status:** ✅ Production Ready  
-**Last Updated:** March 2, 2026  
-**Version:** 1.0.0
+**Last Updated:** March 2, 2026 - 1:23 PM EST  
+**Version:** 1.0.1  
+<!-- Deployment trigger: Enhanced error handling for API routes -->
