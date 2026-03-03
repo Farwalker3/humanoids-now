@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
-import { Redis } from '@vercel/redis';
+import { kv } from '@vercel/kv';
 import { waitlistSchema } from '@/lib/validations';
 import { z } from 'zod';
 
@@ -8,11 +8,6 @@ import { z } from 'zod';
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const NOTIFICATION_EMAIL = process.env.NOTIFICATION_EMAIL;
 const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
-
-// Initialize Redis client
-// Note: Redis client is automatically configured via environment variables:
-// KV_REST_API_URL and KV_REST_API_TOKEN (set by Vercel)
-const redis = Redis.fromEnv();
 
 // Initialize Resend only if API key is available
 let resend: Resend | null = null;
@@ -59,7 +54,7 @@ export async function POST(request: NextRequest) {
     // Check Redis connection and existing entry
     let existingEntry;
     try {
-      existingEntry = await redis.get(`waitlist:${validatedData.email}`);
+      existingEntry = await kv.get(`waitlist:${validatedData.email}`);
     } catch (redisError) {
       console.error('Redis connection error:', redisError);
       return NextResponse.json(
@@ -87,8 +82,8 @@ export async function POST(request: NextRequest) {
     };
     
     try {
-      await redis.set(`waitlist:${validatedData.email}`, JSON.stringify(waitlistData));
-      await redis.incr('waitlist:count');
+      await kv.set(`waitlist:${validatedData.email}`, waitlistData);
+      await kv.incr('waitlist:count');
     } catch (redisError) {
       console.error('Failed to save to Redis:', redisError);
       return NextResponse.json(

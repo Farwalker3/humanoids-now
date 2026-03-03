@@ -1,6 +1,6 @@
 {
   "name": "web-app",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -29,7 +29,7 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-toast": "^1.2.14",
     "@radix-ui/react-tooltip": "^1.2.8",
-    "@vercel/redis": "^2.0.0",
+    "@vercel/kv": "^3.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "color-bits": "^1.1.1",

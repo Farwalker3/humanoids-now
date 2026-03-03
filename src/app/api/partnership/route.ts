@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
-import { Redis } from '@vercel/redis';
+import { kv } from '@vercel/kv';
 import { partnershipSchema } from '@/lib/validations';
 import { z } from 'zod';
 
@@ -8,11 +8,6 @@ import { z } from 'zod';
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const NOTIFICATION_EMAIL = process.env.NOTIFICATION_EMAIL;
 const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
-
-// Initialize Redis client
-// Note: Redis client is automatically configured via environment variables:
-// KV_REST_API_URL and KV_REST_API_TOKEN (set by Vercel)
-const redis = Redis.fromEnv();
 
 // Initialize Resend only if API key is available
 let resend: Resend | null = null;
@@ -68,9 +63,9 @@ export async function POST(request: NextRequest) {
     
     // Store in Redis with proper error handling
     try {
-      await redis.set(inquiryId, JSON.stringify(inquiryData));
-      await redis.lpush('partnership:inquiries', inquiryId);
-      await redis.incr('partnership:count');
+      await kv.set(inquiryId, inquiryData);
+      await kv.lpush('partnership:inquiries', inquiryId);
+      await kv.incr('partnership:count');
     } catch (redisError) {
       console.error('Redis connection error:', redisError);
       return NextResponse.json(
