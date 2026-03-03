@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
-import { kv } from '@vercel/kv';
+import { Redis } from '@vercel/redis';
 import { partnershipSchema } from '@/lib/validations';
 import { z } from 'zod';
 
@@ -8,6 +8,11 @@ import { z } from 'zod';
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const NOTIFICATION_EMAIL = process.env.NOTIFICATION_EMAIL;
 const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
+
+// Initialize Redis client
+// Note: Redis client is automatically configured via environment variables:
+// KV_REST_API_URL and KV_REST_API_TOKEN (set by Vercel)
+const redis = Redis.fromEnv();
 
 // Initialize Resend only if API key is available
 let resend: Resend | null = null;
@@ -61,17 +66,17 @@ export async function POST(request: NextRequest) {
       status: 'new',
     };
     
-    // Store in Vercel KV with proper error handling
+    // Store in Redis with proper error handling
     try {
-      await kv.set(inquiryId, inquiryData);
-      await kv.lpush('partnership:inquiries', inquiryId);
-      await kv.incr('partnership:count');
-    } catch (kvError) {
-      console.error('Vercel KV connection error:', kvError);
+      await redis.set(inquiryId, JSON.stringify(inquiryData));
+      await redis.lpush('partnership:inquiries', inquiryId);
+      await redis.incr('partnership:count');
+    } catch (redisError) {
+      console.error('Redis connection error:', redisError);
       return NextResponse.json(
         { 
           error: 'Database connection failed. Please try again later.',
-          details: process.env.NODE_ENV === 'development' ? String(kvError) : undefined
+          details: process.env.NODE_ENV === 'development' ? String(redisError) : undefined
         },
         { status: 503 }
       );
@@ -162,6 +167,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Partnership inquiry submitted successfully',
+      data: {
+        name: validatedData.name,
+        organization: validatedData.organization,
+      }
     });
     
   } catch (error) {
