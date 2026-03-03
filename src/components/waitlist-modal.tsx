@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -53,16 +53,20 @@ export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
         throw new Error(result.error || 'Something went wrong');
       }
 
+      // Enhanced success message with more details
       toast({
-        title: 'Success!',
-        description: "You've been added to the waitlist. We'll be in touch soon!",
+        title: '🎉 Welcome to the Waitlist!',
+        description: data.name 
+          ? `Thanks ${data.name}! We've sent a confirmation email to ${data.email}. You'll be among the first to know when we launch.`
+          : `Thanks for joining! We've sent a confirmation email to ${data.email}. You'll be among the first to know when we launch.`,
+        duration: 6000,
       });
 
       reset();
       onOpenChange(false);
     } catch (error) {
       toast({
-        title: 'Error',
+        title: 'Unable to Join Waitlist',
         description: error instanceof Error ? error.message : 'Failed to join waitlist. Please try again.',
         variant: 'destructive',
       });
@@ -135,7 +139,10 @@ export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
                   Joining...
                 </>
               ) : (
-                'Join Waitlist'
+                <>
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Join Waitlist
+                </>
               )}
             </Button>
           </div>

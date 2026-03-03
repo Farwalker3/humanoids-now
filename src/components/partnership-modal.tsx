@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Send } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -54,16 +54,18 @@ export function PartnershipModal({ open, onOpenChange }: PartnershipModalProps) 
         throw new Error(result.error || 'Something went wrong');
       }
 
+      // Enhanced success message with more details
       toast({
-        title: 'Success!',
-        description: "Thank you for your interest! We'll be in touch within 48 hours.",
+        title: '✅ Inquiry Submitted Successfully!',
+        description: `Thank you, ${data.name}! We've received your partnership inquiry from ${data.organization}. Our team will review your message and respond within 48 hours. Check your email for confirmation.`,
+        duration: 8000,
       });
 
       reset();
       onOpenChange(false);
     } catch (error) {
       toast({
-        title: 'Error',
+        title: 'Unable to Submit Inquiry',
         description: error instanceof Error ? error.message : 'Failed to submit inquiry. Please try again.',
         variant: 'destructive',
       });
@@ -170,7 +172,10 @@ export function PartnershipModal({ open, onOpenChange }: PartnershipModalProps) 
                   Submitting...
                 </>
               ) : (
-                'Submit Inquiry'
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Submit Inquiry
+                </>
               )}
             </Button>
           </div>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
-import { kv } from '@vercel/kv';
+import { Redis } from '@vercel/redis';
 import { waitlistSchema } from '@/lib/validations';
 import { z } from 'zod';
 
@@ -8,6 +8,11 @@ import { z } from 'zod';
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const NOTIFICATION_EMAIL = process.env.NOTIFICATION_EMAIL;
 const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
+
+// Initialize Redis client
+// Note: Redis client is automatically configured via environment variables:
+// KV_REST_API_URL and KV_REST_API_TOKEN (set by Vercel)
+const redis = Redis.fromEnv();
 
 // Initialize Resend only if API key is available
 let resend: Resend | null = null;
@@ -51,16 +56,16 @@ export async function POST(request: NextRequest) {
       throw validationError;
     }
     
-    // Check Vercel KV connection and existing entry
+    // Check Redis connection and existing entry
     let existingEntry;
     try {
-      existingEntry = await kv.get(`waitlist:${validatedData.email}`);
-    } catch (kvError) {
-      console.error('Vercel KV connection error:', kvError);
+      existingEntry = await redis.get(`waitlist:${validatedData.email}`);
+    } catch (redisError) {
+      console.error('Redis connection error:', redisError);
       return NextResponse.json(
         { 
           error: 'Database connection failed. Please try again later.',
-          details: process.env.NODE_ENV === 'development' ? String(kvError) : undefined
+          details: process.env.NODE_ENV === 'development' ? String(redisError) : undefined
         },
         { status: 503 }
       );
@@ -73,7 +78,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Store in Vercel KV with timestamp
+    // Store in Redis with timestamp
     const timestamp = new Date().toISOString();
     const waitlistData = {
       email: validatedData.email,
@@ -82,14 +87,14 @@ export async function POST(request: NextRequest) {
     };
     
     try {
-      await kv.set(`waitlist:${validatedData.email}`, waitlistData);
-      await kv.incr('waitlist:count');
-    } catch (kvError) {
-      console.error('Failed to save to Vercel KV:', kvError);
+      await redis.set(`waitlist:${validatedData.email}`, JSON.stringify(waitlistData));
+      await redis.incr('waitlist:count');
+    } catch (redisError) {
+      console.error('Failed to save to Redis:', redisError);
       return NextResponse.json(
         { 
           error: 'Failed to save your information. Please try again later.',
-          details: process.env.NODE_ENV === 'development' ? String(kvError) : undefined
+          details: process.env.NODE_ENV === 'development' ? String(redisError) : undefined
         },
         { status: 503 }
       );
@@ -163,6 +168,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Successfully joined the waitlist',
+      data: {
+        email: validatedData.email,
+        name: validatedData.name,
+      }
     });
     
   } catch (error) {
