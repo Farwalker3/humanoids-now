@@ -44,7 +44,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="font-display font-bold text-lg tracking-tight">
-              Prosthetic Companion
+              Humanoids Now
             </div>
             <nav className="hidden md:flex items-center gap-8">
               <a href="#vision" className="text-sm text-muted-foreground hover:text-foreground transition">
@@ -321,7 +321,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="font-display font-bold text-sm text-muted-foreground mb-4 md:mb-0">
-              Prosthetic Companion Project
+              Humanoids Now Project
             </div>
             <p className="text-sm text-muted-foreground text-center md:text-right">
               Building intelligent, human-centered robotics solutions.
