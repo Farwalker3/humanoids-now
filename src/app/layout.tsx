@@ -23,7 +23,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Prosthetic Companion - Building the Future of Human-Robot Collaboration",
+  title: "Humanoids Now - Building the Future of Human-Robot Collaboration",
   description: "A revolutionary prosthetic companion project. Building intelligent robotics solutions that enhance human capability.",
 };
 
