@@ -266,7 +266,7 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1 }}
             viewport={{ once: true, margin: '-100px' }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12"
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
           >
             {/* Join Waitlist Button */}
             <button 
@@ -283,6 +283,16 @@ export default function Home() {
             >
               Interested in Partnering?
             </button>
+
+            {/* Support the Project Button */}
+            <a
+              href="https://shop.kodair.us/pages/humanoids-now"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-gradient-to-r from-accent to-accent/80 text-accent-foreground font-semibold py-4 px-8 rounded-lg hover:from-accent/90 hover:to-accent/70 transition text-lg font-display text-center flex items-center justify-center"
+            >
+              Support the Project
+            </a>
           </motion.div>
 
           <motion.div
