@@ -3,14 +3,16 @@
  * Centralized place for app constants and settings
  */
 export const siteConfig = {
-  name: "Web App",
-  description: "AI-friendly Next.js boilerplate for building web applications",
-  url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  name: "Humanoids Now",
+  description: "Building revolutionary bipedal humanoid robots with animal-inspired designs that serve as both autonomous companions and modular prosthetic components.",
+  url: process.env.NEXT_PUBLIC_APP_URL || "https://humanoids-now.kodair.us",
   links: {
-    github: "https://github.com",
-    twitter: "https://twitter.com",
+    github: "https://github.com/Farwalker3/humanoids-now",
+    twitter: "https://x.com/farwalker3",
+    linkedin: "https://www.linkedin.com/in/johncbarr/",
+    shop: "https://shop.kodair.us/pages/humanoids-now",
   },
-  creator: "Your Name",
+  creator: "John C. Barr",
 };
 
 export type SiteConfig = typeof siteConfig;
